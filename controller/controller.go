@@ -3,7 +3,9 @@ package controller
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
+	"storimvp/config"
 	"storimvp/schema"
 	"strconv"
 	"strings"
@@ -47,19 +49,32 @@ func readCVSFile() {
 			dateCVS := strings.Split(d.Date, "/")
 			month := dateCVS[0]
 			day := dateCVS[1]
-			fmt.Printf("%v,%v,%v,%v;\n", d.Id, month, day, d.Transaction)
+			fmt.Printf("IdTransaction:%v, Moth:%v, Day:%v, Transactio:%v;\n", d.Id, month, day, d.Transaction)
 
-			/*
-				t := schema.DBDocument{
-						Id:          stringToUint(d.Id),
-						Date:        fmt.Sprintf("%v-%v-%v", YEAR, month, day),
-						Transaction: d.Transaction,
-				}
-				AddTransaction(t)
-			*/
+			t := schema.DBDocument{
+				IdTransaction: stringToUint(d.Id),
+				Date:          fmt.Sprintf("%v-%v-%v", YEAR, month, day),
+				Transaction:   stringToUint64(d.Transaction),
+			}
+			addTransaction(t)
+
 		}
 	}
+	fmt.Println("Total balance:", totalBalance())
+}
 
+func addTransaction(t schema.DBDocument) {
+	if err := config.GetDB().Create(&t).Error; err != nil {
+		log.Fatalln("Create row fail!")
+	}
+}
+
+func totalBalance() float64 {
+	var totalTransaction float64
+	if err := config.GetDB().Model(&schema.DBDocument{}).Select("SUM(transaction)").Scan(&totalTransaction).Error; err != nil {
+		log.Fatalln("failed to get total transaction")
+	}
+	return totalTransaction
 }
 
 func printError(err error) {
@@ -72,7 +87,12 @@ func printError(err error) {
 func stringToUint(s string) uint {
 	// Convertir el string a uint64
 	num, _ := strconv.ParseUint(s, 10, 0)
-
 	// Convertir el uint64 a uint
 	return uint(num)
+}
+
+func stringToUint64(s string) float64 {
+	floatValue, _ := strconv.ParseFloat(s, 64)
+	// Convertir el float64 a int64
+	return floatValue
 }
