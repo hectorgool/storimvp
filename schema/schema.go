@@ -5,8 +5,9 @@ type (
 		Id, Date, Transaction string
 	}
 	DBDocument struct {
-		Id          uint   `gorm:"primaryKey"`
-		Date        string `gorm:"type:date"`
-		Transaction string `json:"transaction"`
+		Id            uint    `gorm:"primaryKey"`
+		IdTransaction uint    `json:"idTransaction"`
+		Date          string  `gorm:"type:date"`
+		Transaction   float64 `json:"transaction"`
 	}
 )
