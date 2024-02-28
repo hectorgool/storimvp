@@ -60,7 +60,9 @@ func readCVSFile() {
 
 		}
 	}
-	fmt.Println("Total balance:", totalBalance())
+	fmt.Println("Total balance: ", totalBalance())
+	fmt.Println("Average debit amount: ", averageDebitAmount())
+	fmt.Println("Average credit amount: ", averageCreditAmount())
 }
 
 func addTransaction(t schema.DBDocument) {
@@ -70,11 +72,27 @@ func addTransaction(t schema.DBDocument) {
 }
 
 func totalBalance() float64 {
-	var totalTransaction float64
-	if err := config.GetDB().Model(&schema.DBDocument{}).Select("SUM(transaction)").Scan(&totalTransaction).Error; err != nil {
+	var total float64
+	if err := config.GetDB().Model(&schema.DBDocument{}).Select("SUM(transaction)").Scan(&total).Error; err != nil {
 		log.Fatalln("failed to get total transaction")
 	}
-	return totalTransaction
+	return total
+}
+
+func averageDebitAmount() float64 {
+	var avg float64
+	if err := config.GetDB().Model(&schema.DBDocument{}).Where("transaction < ?", 0).Select("AVG(transaction)").Scan(&avg).Error; err != nil {
+		log.Fatalln("failed to get total transaction")
+	}
+	return avg
+}
+
+func averageCreditAmount() float64 {
+	var avg float64
+	if err := config.GetDB().Model(&schema.DBDocument{}).Where("transaction > ?", 0).Select("AVG(transaction)").Scan(&avg).Error; err != nil {
+		log.Fatalln("failed to get total transaction")
+	}
+	return avg
 }
 
 func printError(err error) {
