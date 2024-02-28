@@ -1,4 +1,4 @@
-module sotorimvp
+module storimvp
 
 go 1.17
 

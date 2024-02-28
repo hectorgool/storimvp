@@ -1,6 +1,8 @@
 package main
 
 import (
+	"storimvp/controller"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,5 +14,6 @@ func main() {
 			"api": "Hola Stori",
 		})
 	})
+	router.GET("/sendmail", controller.SendMail)
 	router.Run(":8080")
 }
