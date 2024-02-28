@@ -18,6 +18,7 @@ const (
 )
 
 func SendMail(c *gin.Context) {
+	readCVSFile()
 	c.JSON(200, gin.H{
 		"api": "Send Mail",
 	})
