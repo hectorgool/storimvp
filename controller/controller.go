@@ -1,9 +1,12 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/csv"
 	"fmt"
+	"html/template"
 	"log"
+	"net/http"
 	"net/smtp"
 	"os"
 	"storimvp/config"
@@ -21,8 +24,27 @@ const (
 )
 
 func SendMail(c *gin.Context) {
+
+	var emailData schema.EmailData
+
+	userEmail := c.Param("userEmail")
+
 	readCVSFile()
-	c.JSON(200, gin.H{
+
+	emailData.EmailTo = userEmail
+	emailData.TotalBalance = totalBalance()
+	emailData.AverageDebitAmount = averageDebitAmount()
+	emailData.AverageCreditAmount = averageCreditAmount()
+	emailData.Transactions = numberTransactionsInMonth()
+
+	fmt.Println(emailData)
+
+	err := SendEmail(emailData)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
 		"api": "Send Mail",
 	})
 }
@@ -41,11 +63,10 @@ func readCVSFile() {
 
 	d := new(schema.Document)
 
-	for n, col := range rows {
+	for _, col := range rows {
 		d.Id = col[0]
 		d.Date = col[1]
 		d.Transaction = col[2]
-		n++
 		if (strings.ToUpper(d.Id) != strings.ToUpper("Id")) || (strings.ToUpper(d.Date) != strings.ToUpper("Date")) || (strings.ToUpper(d.Transaction) != strings.ToUpper("Transaction")) {
 			dateCVS := strings.Split(d.Date, "/")
 			month := dateCVS[0]
@@ -60,10 +81,6 @@ func readCVSFile() {
 			addTransaction(t)
 		}
 	}
-	fmt.Println("Total balance: ", totalBalance())
-	fmt.Println("Average debit amount: ", averageDebitAmount())
-	fmt.Println("Average credit amount: ", averageCreditAmount())
-	fmt.Println("Number Transactions: ", numberTransactionsInMonth())
 }
 
 func addTransaction(t schema.DBDocument) {
@@ -157,53 +174,47 @@ func numberTransactionsInMonth() []schema.TransactionsByMonth {
 	return transactions
 
 }
-
-func confgSendMail() {
-	// Datos del servidor SMTP
-	smtpHost := "smtp.example.com"
+func SendEmail(data schema.EmailData) error {
+	// Configuración del servidor SMTP
+	smtpServer := "smtp.gmail.com"
 	smtpPort := "587"
-	smtpUsername := "tu_usuario"
-	smtpPassword := "tu_contraseña"
+	senderEmail := os.Getenv("SMTP_SENDER")
+	senderPassword := os.Getenv("SMTP_PASSWD")
 
-	// Correo electrónico destinatario
-	to := []string{"destinatario@example.com"}
+	// Autenticación con el servidor SMTP
+	auth := smtp.PlainAuth("", senderEmail, senderPassword, smtpServer)
 
-	// Asunto del correo electrónico
-	subject := "Ejemplo de correo electrónico HTML con tabla dinámica"
+	// Plantilla HTML externa
+	templateFile := "template.html"
 
-	// Contenido HTML desde archivo externo
-	htmlContent, err := os.ReadFile("template.html")
-	if err != nil {
-		fmt.Println("Error al leer el archivo HTML:", err)
-		return
-	}
-
-	// Enviar correo electrónico
-	err = sendMail(smtpHost, smtpPort, smtpUsername, smtpPassword, to, subject, string(htmlContent))
-	if err != nil {
-		fmt.Println("Error al enviar el correo electrónico:", err)
-		return
-	}
-
-	fmt.Println("Correo electrónico enviado con éxito.")
-}
-
-func sendMail(host, port, username, password string, to []string, subject, body string) error {
-	// Configuración del cliente SMTP
-	auth := smtp.PlainAuth("", username, password, host)
-
-	// Construir mensaje de correo electrónico
-	msg := []byte("To: " + to[0] + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		"Content-Type: text/html; charset=UTF-8\r\n" +
-		"\r\n" +
-		body)
-
-	// Enviar correo electrónico
-	err := smtp.SendMail(host+":"+port, auth, username, to, msg)
+	// Parseamos la plantilla HTML
+	t, err := template.ParseFiles(templateFile)
 	if err != nil {
 		return err
 	}
 
+	// Creamos un buffer para almacenar la salida de la plantilla
+	var tpl bytes.Buffer
+	if err := t.Execute(&tpl, data); err != nil {
+		return err
+	}
+
+	// Mensaje del correo electrónico
+	htmlMessage := tpl.String()
+
+	// Destinatario
+	to := []string{os.Getenv("SMTP_SENDER")}
+	to = append(to, data.EmailTo)
+	subject := "MVP Stori, Héctor González Olmos"
+
+	body := []byte("To: " + to[0] + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n\r\n" +
+		htmlMessage)
+
+	err = smtp.SendMail(smtpServer+":"+smtpPort, auth, senderEmail, to, body)
+	if err != nil {
+		return err
+	}
 	return nil
 }
