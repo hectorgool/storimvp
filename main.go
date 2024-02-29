@@ -15,5 +15,6 @@ func main() {
 		})
 	})
 	router.GET("/sendmail/:userEmail", controller.SendMail)
+	router.DELETE("/reset", controller.Reset)
 	router.Run(":8080")
 }
