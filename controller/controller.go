@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
+	"net/smtp"
 	"os"
 	"storimvp/config"
 	"storimvp/schema"
@@ -57,7 +58,6 @@ func readCVSFile() {
 				Transaction:   stringToUint64(d.Transaction),
 			}
 			addTransaction(t)
-
 		}
 	}
 	fmt.Println("Total balance: ", totalBalance())
@@ -144,7 +144,6 @@ func numberTransactionsInMonth() []schema.TransactionsByMonth {
 	}
 
 	for monthNumber, monthName := range months {
-
 		n := countTransactionsByMonth(monthNumber)
 		if n != 0 {
 			newTransaction := schema.TransactionsByMonth{
@@ -154,9 +153,57 @@ func numberTransactionsInMonth() []schema.TransactionsByMonth {
 			// Append the new transaction to the array
 			transactions = append(transactions, newTransaction)
 		}
-
 	}
-
 	return transactions
 
+}
+
+func confgSendMail() {
+	// Datos del servidor SMTP
+	smtpHost := "smtp.example.com"
+	smtpPort := "587"
+	smtpUsername := "tu_usuario"
+	smtpPassword := "tu_contraseña"
+
+	// Correo electrónico destinatario
+	to := []string{"destinatario@example.com"}
+
+	// Asunto del correo electrónico
+	subject := "Ejemplo de correo electrónico HTML con tabla dinámica"
+
+	// Contenido HTML desde archivo externo
+	htmlContent, err := os.ReadFile("template.html")
+	if err != nil {
+		fmt.Println("Error al leer el archivo HTML:", err)
+		return
+	}
+
+	// Enviar correo electrónico
+	err = sendMail(smtpHost, smtpPort, smtpUsername, smtpPassword, to, subject, string(htmlContent))
+	if err != nil {
+		fmt.Println("Error al enviar el correo electrónico:", err)
+		return
+	}
+
+	fmt.Println("Correo electrónico enviado con éxito.")
+}
+
+func sendMail(host, port, username, password string, to []string, subject, body string) error {
+	// Configuración del cliente SMTP
+	auth := smtp.PlainAuth("", username, password, host)
+
+	// Construir mensaje de correo electrónico
+	msg := []byte("To: " + to[0] + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"Content-Type: text/html; charset=UTF-8\r\n" +
+		"\r\n" +
+		body)
+
+	// Enviar correo electrónico
+	err := smtp.SendMail(host+":"+port, auth, username, to, msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

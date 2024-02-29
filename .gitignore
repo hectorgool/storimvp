@@ -1,0 +1,22 @@
+# Archivos compilados
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Directorio bin
+bin/
+
+# Directorio de dependencias
+vendor/
+
+# Archivos de configuración específicos del sistema
+.idea/
+.vscode/
+
+# Archivos de respaldo
+*~
+
+# Ejecutables de Go
+/main
