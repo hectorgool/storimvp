@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 const (
@@ -46,6 +47,19 @@ func SendMail(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"api": "Send Mail",
+	})
+}
+
+func Reset(c *gin.Context) {
+
+	result := config.GetDB().Session(&gorm.Session{AllowGlobalUpdate: true}).Delete(&schema.DBDocument{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"api": "Reset",
 	})
 }
 
