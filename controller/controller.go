@@ -63,7 +63,7 @@ func readCVSFile() {
 	fmt.Println("Total balance: ", totalBalance())
 	fmt.Println("Average debit amount: ", averageDebitAmount())
 	fmt.Println("Average credit amount: ", averageCreditAmount())
-	numberTransactionsInMonth()
+	fmt.Println("Number Transactions: ", numberTransactionsInMonth())
 }
 
 func addTransaction(t schema.DBDocument) {
@@ -124,7 +124,10 @@ func countTransactionsByMonth(monthNumber int) int64 {
 	return count
 }
 
-func numberTransactionsInMonth() {
+func numberTransactionsInMonth() []schema.TransactionsByMonth {
+
+	transactions := []schema.TransactionsByMonth{}
+
 	months := map[int]string{
 		1:  "Junuary",
 		2:  "February",
@@ -141,9 +144,19 @@ func numberTransactionsInMonth() {
 	}
 
 	for monthNumber, monthName := range months {
+
 		n := countTransactionsByMonth(monthNumber)
 		if n != 0 {
-			fmt.Printf("Number of transactions in %v: %v\n", monthName, countTransactionsByMonth(monthNumber))
+			newTransaction := schema.TransactionsByMonth{
+				Total: n,
+				Month: monthName,
+			}
+			// Append the new transaction to the array
+			transactions = append(transactions, newTransaction)
 		}
+
 	}
+
+	return transactions
+
 }
