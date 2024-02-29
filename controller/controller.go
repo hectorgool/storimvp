@@ -63,6 +63,7 @@ func readCVSFile() {
 	fmt.Println("Total balance: ", totalBalance())
 	fmt.Println("Average debit amount: ", averageDebitAmount())
 	fmt.Println("Average credit amount: ", averageCreditAmount())
+	numberTransactionsInMonth()
 }
 
 func addTransaction(t schema.DBDocument) {
@@ -113,4 +114,36 @@ func stringToUint64(s string) float64 {
 	floatValue, _ := strconv.ParseFloat(s, 64)
 	// Convertir el float64 a int64
 	return floatValue
+}
+
+func countTransactionsByMonth(monthNumber int) int64 {
+	var count int64
+	if err := config.GetDB().Model(&schema.DBDocument{}).Where("MONTH(date) = ?", monthNumber).Count(&count).Error; err != nil {
+		log.Fatalln("failed to get total transaction")
+	}
+	return count
+}
+
+func numberTransactionsInMonth() {
+	months := map[int]string{
+		1:  "Junuary",
+		2:  "February",
+		3:  "March",
+		4:  "Abril",
+		5:  "May",
+		6:  "June",
+		7:  "July",
+		8:  "August",
+		9:  "September",
+		10: "October",
+		11: "November",
+		12: "December",
+	}
+
+	for monthNumber, monthName := range months {
+		n := countTransactionsByMonth(monthNumber)
+		if n != 0 {
+			fmt.Printf("Number of transactions in %v: %v\n", monthName, countTransactionsByMonth(monthNumber))
+		}
+	}
 }
