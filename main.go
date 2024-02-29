@@ -14,6 +14,6 @@ func main() {
 			"api": "Hola Stori",
 		})
 	})
-	router.GET("/sendmail", controller.SendMail)
+	router.GET("/sendmail/:userEmail", controller.SendMail)
 	router.Run(":8080")
 }
